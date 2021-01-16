@@ -6,34 +6,36 @@
 //  Copyright (c) 2013 Williamsonic. All rights reserved.
 //
 
+
+#include <cstring>
+
 #include "WAVEchunk.h"
 
-chunkWAVEchunk::chunkWAVEchunk(void)  {memset(this, 0, sizeof(chunkWAVEchunk));}
-riffWAVEchunk::riffWAVEchunk(void)    {memset(this, 0, sizeof(riffWAVEchunk));}
-formatWAVEchunk::formatWAVEchunk(void){memset(this, 0, sizeof(formatWAVEchunk));}
-dataWAVEchunk::dataWAVEchunk(void)    {memset(this, 0, sizeof(dataWAVEchunk));}
+chunkWAVEchunk::chunkWAVEchunk(void):
+	chunkSize(0) {memset(chunkID, 0, sizeof(chunkID));}
+riffWAVEchunk::riffWAVEchunk(void)
+	{memset(format, 0, sizeof(format));}
+formatWAVEchunk::formatWAVEchunk(void):
+	fmtCode(0), numChan(0), sampRate(0), byteRate(0), blockAlign(0), bitsSamp(0) {}
+dataWAVEchunk::dataWAVEchunk(void) {}
 
 chunkWAVEchunk::chunkWAVEchunk(istream &i)
 {
-    memset(this, 0, sizeof(chunkWAVEchunk));
     i.read((char *)this, sizeof(chunkWAVEchunk));
 }
 
 riffWAVEchunk::riffWAVEchunk(istream &i)
 {
-    memset(this, 0, sizeof(riffWAVEchunk));
     i.read((char *)this, sizeof(riffWAVEchunk));
 }
 
 formatWAVEchunk::formatWAVEchunk(istream &i)
 {
-    memset(this, 0, sizeof(formatWAVEchunk));
     i.read((char *)this, sizeof(formatWAVEchunk));
 }
 
 dataWAVEchunk::dataWAVEchunk(istream &i)
 {
-    memset(this, 0, sizeof(dataWAVEchunk));
     i.read((char *)this, sizeof(dataWAVEchunk));
 }
 

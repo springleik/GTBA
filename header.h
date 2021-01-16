@@ -16,7 +16,7 @@
 #include <fstream>
 #include <string>
 #include <map>
-#include <CoreServices/CoreServices.h>
+// #include <CoreServices/CoreServices.h>
 #include <complex>
 
 #include "WAVEchunk.h"

@@ -6,6 +6,9 @@
 //  Copyright (c) 2013 Williamsonic. All rights reserved.
 //
 
+#include <cassert>
+#include <cstring>
+
 #include "header.h"
 
 // data members

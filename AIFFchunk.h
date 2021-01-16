@@ -10,7 +10,7 @@
 #define __gtba__AIFFchunk__
 
 #include <iostream>
-#include <CoreServices/CoreServices.h>
+// #include <CoreServices/CoreServices.h>
 
 using namespace std;
 
@@ -42,20 +42,21 @@ struct formatAIFFchunk : chunkAIFFchunk
 };
 
 // total 26 bytes
+#pragma pack(2)
 struct commonAIFFchunk : chunkAIFFchunk
 {
     // data members
     short channelCount;   // 2 bytes
     int   frameCount;     // 4 bytes
     short sampleSize;     // 2 bytes
-    Float80 sampleRate;   // 10 bytes
+    char  sampRate[10];   // 10 bytes
     
     // method members
     commonAIFFchunk(void);
     commonAIFFchunk(int, double);
     commonAIFFchunk(istream &);
     void showDetails(ostream &);
-} __attribute__ ((packed));
+};
 
 // total 16 bytes
 struct soundAIFFchunk : chunkAIFFchunk

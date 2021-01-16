@@ -6,30 +6,34 @@
 //  Copyright (c) 2013 Williamsonic. All rights reserved.
 //
 
+#include <cstring>
+
 #include "AIFFchunk.h"
 
-chunkAIFFchunk::chunkAIFFchunk(void)   {memset(this, 0, sizeof(chunkAIFFchunk));}
-formatAIFFchunk::formatAIFFchunk(void) {memset(this, 0, sizeof(formatAIFFchunk));}
-commonAIFFchunk::commonAIFFchunk(void) {memset(this, 0, sizeof(commonAIFFchunk));}
-soundAIFFchunk::soundAIFFchunk(void)   {memset(this, 0, sizeof(soundAIFFchunk));}
+chunkAIFFchunk::chunkAIFFchunk(void)
+	{memset(this, 0, sizeof(*this));}
+formatAIFFchunk::formatAIFFchunk(void)
+	{memset(formType, 0, sizeof(formType));}
+commonAIFFchunk::commonAIFFchunk(void):
+	channelCount(0), frameCount(0), sampleSize(0)
+	{memset(sampRate, 0, sizeof(sampRate));}
+soundAIFFchunk::soundAIFFchunk(void):
+	offset(0), blockSize(0) {}
 
 chunkAIFFchunk::chunkAIFFchunk(istream &i)
 {
-    memset(this, 0, sizeof(chunkAIFFchunk));
     i.read((char *)this, sizeof(chunkAIFFchunk));
     byteSwap(chunkSize);
 }
 
 formatAIFFchunk::formatAIFFchunk(istream &i)
 {
-    memset(this, 0, sizeof(formatAIFFchunk));
     i.read((char *)this, sizeof(formatAIFFchunk));
     byteSwap(chunkSize);
 }
 
 commonAIFFchunk::commonAIFFchunk(istream &i)
 {
-    memset(this, 0, sizeof(commonAIFFchunk));
     i.read((char *)this, sizeof(commonAIFFchunk));
     byteSwap(chunkSize);
     byteSwap(channelCount);
@@ -39,7 +43,6 @@ commonAIFFchunk::commonAIFFchunk(istream &i)
 
 soundAIFFchunk::soundAIFFchunk(istream &i)
 {
-    memset(this, 0, sizeof(soundAIFFchunk));
     i.read((char *)this, sizeof(soundAIFFchunk));
     byteSwap(chunkSize);
     byteSwap(offset);
@@ -65,9 +68,11 @@ commonAIFFchunk::commonAIFFchunk(int theSize, double theRate)
     channelCount = 2;
     frameCount = theSize / 4;
     sampleSize = 16;
-    dtox80(&theRate, &sampleRate);
+    union {long double ldRate; char cRate[10];} rateUnion = {theRate};
     
     // swap bytes as needed
+    int i = 10;
+    while (i) {--i; sampRate[i] = rateUnion.cRate[9-i];}
     byteSwap(chunkSize);
     byteSwap(channelCount);
     byteSwap(frameCount);
@@ -111,7 +116,13 @@ void commonAIFFchunk::showDetails(ostream &o)
     o << "channelCount," << channelCount << endl;
     o << "frameCount," << frameCount << endl;
     o << "sampleSize," << sampleSize << endl;
-    o << "sampleRate," << x80tod(&sampleRate) << endl;
+
+    // swap bytes as needed
+    union {long double ldRate; char cRate[10];} rateUnion = {0};
+    int i = 10;
+    while (i) {--i; rateUnion.cRate[i] = sampRate[9-i];}
+    o << "sampRate," << rateUnion.ldRate << endl;
+
 }
 
 void soundAIFFchunk::showDetails(ostream &o)
