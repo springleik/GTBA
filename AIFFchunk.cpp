@@ -10,125 +10,155 @@
 
 #include "AIFFchunk.h"
 
-chunkAIFFchunk::chunkAIFFchunk(void)
-	{memset(this, 0, sizeof(*this));}
-formatAIFFchunk::formatAIFFchunk(void)
-	{memset(formType, 0, sizeof(formType));}
-commonAIFFchunk::commonAIFFchunk(void):
-	channelCount(0), frameCount(0), sampleSize(0)
-	{memset(sampRate, 0, sizeof(sampRate));}
-soundAIFFchunk::soundAIFFchunk(void):
-	offset(0), blockSize(0) {}
-
-chunkAIFFchunk::chunkAIFFchunk(istream &i)
+chunkAIFFchunk::chunkAIFFchunk (void)
 {
-    i.read((char *)this, sizeof(chunkAIFFchunk));
-    byteSwap(chunkSize);
+  memset (this, 0, sizeof(*this));
+}
+formatAIFFchunk::formatAIFFchunk (void)
+{
+  memset (formType, 0, sizeof(formType));
+}
+commonAIFFchunk::commonAIFFchunk (void) :
+    channelCount (0), frameCount (0), sampleSize (0)
+{
+  memset (sampRate, 0, sizeof(sampRate));
+}
+soundAIFFchunk::soundAIFFchunk (void) :
+    offset (0), blockSize (0)
+{
 }
 
-formatAIFFchunk::formatAIFFchunk(istream &i)
+chunkAIFFchunk::chunkAIFFchunk (istream &i)
 {
-    i.read((char *)this, sizeof(formatAIFFchunk));
-    byteSwap(chunkSize);
+  i.read ((char*) this, sizeof(chunkAIFFchunk));
+  byteSwap (chunkSize);
 }
 
-commonAIFFchunk::commonAIFFchunk(istream &i)
+formatAIFFchunk::formatAIFFchunk (istream &i)
 {
-    i.read((char *)this, sizeof(commonAIFFchunk));
-    byteSwap(chunkSize);
-    byteSwap(channelCount);
-    byteSwap(frameCount);
-    byteSwap(sampleSize);
+  i.read ((char*) this, sizeof(formatAIFFchunk));
+  byteSwap (chunkSize);
 }
 
-soundAIFFchunk::soundAIFFchunk(istream &i)
+commonAIFFchunk::commonAIFFchunk (istream &i)
 {
-    i.read((char *)this, sizeof(soundAIFFchunk));
-    byteSwap(chunkSize);
-    byteSwap(offset);
-    byteSwap(blockSize);
+  i.read ((char*) this, sizeof(commonAIFFchunk));
+  byteSwap (chunkSize);
+  byteSwap (channelCount);
+  byteSwap (frameCount);
+  byteSwap (sampleSize);
 }
 
-formatAIFFchunk::formatAIFFchunk(int theSize)
+soundAIFFchunk::soundAIFFchunk (istream &i)
 {
-    // populate fields
-    memcpy(chunkID, "FORM", 4);   // not a null-terminated string
-    chunkSize = theSize + 46;
-    memcpy(formType, "AIFF", 4);  // not a null-terminated string
-    
-    // swap bytes as needed
-    byteSwap(chunkSize);
+  i.read ((char*) this, sizeof(soundAIFFchunk));
+  byteSwap (chunkSize);
+  byteSwap (offset);
+  byteSwap (blockSize);
 }
 
-commonAIFFchunk::commonAIFFchunk(int theSize, double theRate)
+formatAIFFchunk::formatAIFFchunk (int theSize)
 {
-    // assume always 16 bit samples, 2 channel stereo
-    memcpy(chunkID, "COMM", 4);   // not a null-terminated string
-    chunkSize = 18;
-    channelCount = 2;
-    frameCount = theSize / 4;
-    sampleSize = 16;
-    union {long double ldRate; char cRate[10];} rateUnion = {theRate};
-    
-    // swap bytes as needed
-    int i = 10;
-    while (i) {--i; sampRate[i] = rateUnion.cRate[9-i];}
-    byteSwap(chunkSize);
-    byteSwap(channelCount);
-    byteSwap(frameCount);
-    byteSwap(sampleSize);
+  // populate fields
+  memcpy (chunkID, "FORM", 4);   // not a null-terminated string
+  chunkSize = theSize + 46;
+  memcpy (formType, "AIFF", 4);  // not a null-terminated string
+
+  // swap bytes as needed
+  byteSwap (chunkSize);
 }
 
-soundAIFFchunk::soundAIFFchunk(int theSize)
+commonAIFFchunk::commonAIFFchunk (int theSize, double theRate)
 {
-    // populate fields
-    memcpy(chunkID, "SSND", 4); // not a null-terminated string
-    chunkSize = theSize + 8;
-    offset = 0;
-    blockSize = 0;
-    
-    // swap bytes as needed
-    byteSwap(chunkSize);
-    byteSwap(offset);
-    byteSwap(blockSize);
+  // assume always 16 bit samples, 2 channel stereo
+  memcpy (chunkID, "COMM", 4);   // not a null-terminated string
+  chunkSize = 18;
+  channelCount = 2;
+  frameCount = theSize / 4;
+  sampleSize = 16;
+  union
+  {
+    long double ldRate;
+    char cRate[10];
+  } rateUnion =
+    { theRate };
+
+  // swap bytes as needed
+  int i = 10;
+  while (i)
+    {
+      --i;
+      sampRate[i] = rateUnion.cRate[9 - i];
+    }
+  byteSwap (chunkSize);
+  byteSwap (channelCount);
+  byteSwap (frameCount);
+  byteSwap (sampleSize);
 }
 
-void chunkAIFFchunk::showDetails(ostream &o)
+soundAIFFchunk::soundAIFFchunk (int theSize)
 {
-    // copy 4 character ID to an array
-    char id[] = "ABCD";
-    memcpy(id, chunkID, 4);
-    o << "chunkID," << id << endl;
-    o << "chunkSize," << chunkSize << endl;
+  // populate fields
+  memcpy (chunkID, "SSND", 4); // not a null-terminated string
+  chunkSize = theSize + 8;
+  offset = 0;
+  blockSize = 0;
+
+  // swap bytes as needed
+  byteSwap (chunkSize);
+  byteSwap (offset);
+  byteSwap (blockSize);
 }
 
-void formatAIFFchunk::showDetails(ostream &o)
+void
+chunkAIFFchunk::showDetails (ostream &o)
 {
-    chunkAIFFchunk::showDetails(o);
-    char id[] = "ABCD";
-    memcpy(id, formType, 4);
-    o << "formType," << id << endl;
+  // copy 4 character ID to an array
+  char id[] = "ABCD";
+  memcpy (id, chunkID, 4);
+  o << "chunkID," << id << endl;
+  o << "chunkSize," << chunkSize << endl;
 }
 
-void commonAIFFchunk::showDetails(ostream &o)
+void
+formatAIFFchunk::showDetails (ostream &o)
 {
-    chunkAIFFchunk::showDetails(o);
-    o << "channelCount," << channelCount << endl;
-    o << "frameCount," << frameCount << endl;
-    o << "sampleSize," << sampleSize << endl;
+  chunkAIFFchunk::showDetails (o);
+  char id[] = "ABCD";
+  memcpy (id, formType, 4);
+  o << "formType," << id << endl;
+}
 
-    // swap bytes as needed
-    union {long double ldRate; char cRate[10];} rateUnion = {0};
-    int i = 10;
-    while (i) {--i; rateUnion.cRate[i] = sampRate[9-i];}
-    o << "sampRate," << rateUnion.ldRate << endl;
+void
+commonAIFFchunk::showDetails (ostream &o)
+{
+  chunkAIFFchunk::showDetails (o);
+  o << "channelCount," << channelCount << endl;
+  o << "frameCount," << frameCount << endl;
+  o << "sampleSize," << sampleSize << endl;
+
+  // swap bytes as needed
+  union
+  {
+    long double ldRate;
+    char cRate[10];
+  } rateUnion =
+    { 0 };
+  int i = 10;
+  while (i)
+    {
+      --i;
+      rateUnion.cRate[i] = sampRate[9 - i];
+    }
+  o << "sampRate," << rateUnion.ldRate << endl;
 
 }
 
-void soundAIFFchunk::showDetails(ostream &o)
+void
+soundAIFFchunk::showDetails (ostream &o)
 {
-    chunkAIFFchunk::showDetails(o);
-    o << "offset," << offset << endl;
-    o << "blockSize," << blockSize << endl;
+  chunkAIFFchunk::showDetails (o);
+  o << "offset," << offset << endl;
+  o << "blockSize," << blockSize << endl;
 }
 
