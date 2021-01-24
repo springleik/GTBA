@@ -15,6 +15,7 @@ using namespace std;
 
 //---------------------------
 // AIFF file format chunks
+// note that all chunks have even length, conforms to standards
 struct chunkAIFFchunk
 {
   // data members

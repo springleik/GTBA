@@ -1,5 +1,5 @@
 //
-//  gtba.h
+//  header.h
 //  gtba
 //
 //  Originated by Mark Williamsen on 9/28/13.
