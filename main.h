@@ -1,16 +1,15 @@
 //
-//  header.h
+//  main.h
 //  gtba
 //
 //  Originated by Mark Williamsen on 9/28/13.
 //  Copyright (c) 2013 Williamsonic. All rights reserved.
 //
 // http://www.williamsonic.com/DipoleMic/
-// http://muratnkonar.com/aiff/
 //
 
-#ifndef gtba_gtba_h
-#define gtba_gtba_h
+#ifndef gtba_main_h
+#define gtba_main_h
 
 #include <iostream>
 #include <fstream>
@@ -49,6 +48,8 @@ setNumCycles (const char*);
 void
 setDelay (const char*);
 void
+changeDelay (const char*);
+void
 setHelp (void);
 void
 setBurstInt (const char*);
@@ -81,7 +82,9 @@ readInputData (ifstream&);
 void
 readInputBurst (ifstream&);
 void
-findPilot (ifstream&);
+readPilotData (ifstream&);
+void
+readPilotFile (const char *);
 void
 reset (void);
 void

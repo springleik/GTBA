@@ -9,7 +9,7 @@
 #include <cassert>
 #include <cstring>
 
-#include "header.h"
+#include "main.h"
 
 // data members
 const int sampleRate = 44100;   // samples per second
@@ -75,11 +75,11 @@ main (int argc, const char *argv[])
 	{
 	  theFileType = typeAIFF;
 	}
-      else if (!strncmp ("amplitude", s, 3))
+      else if (!strncmp ("amplitude", s, 4))
 	{
 	  setAmplitude (*++argv);
 	}
-      else if (!strncmp ("average", s, 3))
+      else if (!strncmp ("average", s, 4))
 	{
 	  setAveraging (*++argv);
 	}
@@ -91,27 +91,35 @@ main (int argc, const char *argv[])
 	{
 	  theBurstType = harmonicCosine;
 	}
-      else if (!strncmp ("count", s, 3))
+      else if (!strncmp ("count", s, 5))
 	{
 	  setNumBursts (*++argv);
 	}
-      else if (!strncmp ("cycles", s, 3))
+      else if (!strncmp ("cycles", s, 6))
 	{
 	  setNumCycles (*++argv);
 	}
-      else if (!strncmp ("delay", s, 3))
+      else if (!strncmp ("delay", s, 5))
 	{
 	  setDelay (*++argv);
 	}
-      else if (!strncmp ("help", s, 3))
+      else if (!strncmp ("delta", s, 5))
+	{
+	  changeDelay (*++argv);
+	}
+      else if (!strncmp ("find", s, 4))
+	{
+	  readPilotFile (*++argv);
+	}
+      else if (!strncmp ("help", s, 4))
 	{
 	  setHelp ();
 	}
-      else if (!strncmp ("interval", s, 3))
+      else if (!strncmp ("interval", s, 5))
 	{
 	  setBurstInt (*++argv);
 	}
-      else if (!strncmp ("left", s, 3))
+      else if (!strncmp ("left", s, 4))
 	{
 	  setLeftAmpl (*++argv);
 	}
@@ -119,23 +127,23 @@ main (int argc, const char *argv[])
 	{
 	  setBurstMin (*++argv);
 	}
-      else if (!strncmp ("phase", s, 3))
+      else if (!strncmp ("phase", s, 5))
 	{
 	  phase = ('+' == c);
 	}
-      else if (!strncmp ("pilot", s, 3))
+      else if (!strncmp ("pilot", s, 5))
 	{
 	  pilot = ('+' == c);
 	}
-      else if (!strncmp ("read", s, 3))
+      else if (!strncmp ("read", s, 4))
 	{
 	  readInputFile (*++argv);
 	}
-      else if (!strncmp ("right", s, 3))
+      else if (!strncmp ("right", s, 5))
 	{
 	  setRightAmpl (*++argv);
 	}
-      else if (!strncmp ("show", s, 3))
+      else if (!strncmp ("show", s, 4))
 	{
 	  reset ();
 	  showDetails (cout);
@@ -148,15 +156,15 @@ main (int argc, const char *argv[])
 	{
 	  theBurstType = harmonicSine;
 	}
-      else if (!strncmp ("start", s, 3))
+      else if (!strncmp ("start", s, 5))
 	{
 	  setStartFreq (*++argv);
 	}
-      else if (!strncmp ("stop", s, 3))
+      else if (!strncmp ("stop", s, 4))
 	{
 	  setStopFreq (*++argv);
 	}
-      else if (!strncmp ("verbose", s, 3))
+      else if (!strncmp ("verbose", s, 4))
 	{
 	  verbose = ('+' == c);
 	}
@@ -164,7 +172,7 @@ main (int argc, const char *argv[])
 	{
 	  theFileType = typeWAVE;
 	}
-      else if (!strncmp ("write", s, 3))
+      else if (!strncmp ("write", s, 5))
 	{
 	  writeOutputFile (*++argv);
 	}
@@ -244,6 +252,12 @@ setDelay (const char *s)
     delay = atoi (s);
 }
 void
+changeDelay (const char *s)
+{
+  if (s && *s)
+    delay += atoi (s);
+}
+void
 reportError (const char *s)
 {
   if (s && *s)
@@ -263,16 +277,18 @@ setHelp (void)
 	  "\n -count     number of bursts"
 	  "\n -cycles    minimum cycles per burst"
 	  "\n -delay     samples to start of first burst"
+	  "\n -delta     samples to add to delay"
+	  "\n -find      name of input file"
 	  "\n -help      (this list)"
 	  "\n -interval  total samples per interval"
 	  "\n -left      left channel gain"
 	  "\n -minimum   minimum samples per burst"
-	  "\n -phase     (+/- phase on output)"
-	  "\n -pilot     (+/- pilot tone)"
+	  "\n -phase     (+/- output and input in phase)"
+	  "\n -pilot     (+/- pilot tone enabled)"
 	  "\n -read      name of input file"
 	  "\n -right     right channel gain"
 	  "\n -show      (measurement setup)"
-	  "\n -sin1      (simple sine"
+	  "\n -sin1      (simple sine)"
 	  "\n -sin2      (harmonic sine)"
 	  "\n -start     first frequency (Hz)"
 	  "\n -stop      last frequency (Hz)"
@@ -621,8 +637,12 @@ showBurst (ostream &o)
 void
 readInputData (ifstream &inFile)
 {
-  // check for pilot tone
-  findPilot (inFile);
+  inFile.seekg (2 * 2 * delay, inFile.cur);
+  if (pilot)
+    {
+      // skip over pilot tone if enabled
+      inFile.seekg (2 * 2 * burstInterval, inFile.cur);
+    }
 
   // show column headings here
   cout << "numCyc,duration,nomFreq,actFreq,"
@@ -995,16 +1015,10 @@ signDiff (int a, int b)
 
 // scan sound data to find 441 Hz pilot tone
 void
-findPilot (ifstream &inFile)
+readPilotData (ifstream &inFile)
 {
-  // file pointer is at start of sound data on entry
-  if (!pilot)
-    {
-      inFile.seekg (2 * 2 * delay, inFile.cur);
-      inFile.seekg (2 * 2 * burstInterval, inFile.cur);
-      return;
-    }
-  long thePos = inFile.tellg ();
+  // skip over nominal delay time
+  inFile.seekg (2 * 2 * delay, inFile.cur);
 
   // allocate and clear sample FIFOs and axis crossing arrays
   short a[100], b[100];
@@ -1014,17 +1028,26 @@ findPilot (ifstream &inFile)
   {
     I1, Q1, I2, Q2, NChan
   };
-  int next[NChan], prev[NChan], minPos[NChan], maxPos[NChan];
-  memset (minPos, 0, sizeof(minPos));
-  memset (maxPos, 0, sizeof(maxPos));
-  memset (next, 0, sizeof(next));
-  memset (prev, 0, sizeof(prev));
-  int minVal[NChan] =
-    { -1, -1, -1, -1 }, maxVal[NChan] =
-    { 1, 1, 1, 1 };
+  int next[NChan] =
+    { 0, 0, 0, 0 }, prev[NChan] =
+    { 0, 0, 0, 0 };
+
+  // allocate and clear axis-crossing FIFOs for each channel
+  struct xing
+  {
+    int samp;
+    int ampl;
+  } xingI1 =
+    { 0, 0 }, xingQ1 =
+    { 0, 0 }, xingI2 =
+    { 0, 0 }, xingQ2 =
+    { 0, 0 };
 
   // look at 10 seconds of data
-  ofstream outFile ("outPut.csv");	// overwrite temp file each time through
+  ofstream outFile ("outPut.csv");     // overwrite temp file each time through
+  outFile << "n,I1,Q1,I2,Q2" << endl;  // column headings
+  bool keep = false;
+  int offset = 0;
   for (int i = 0; i < (10 * sampleRate); i++)
     {
       // slide fifo along input stream
@@ -1049,132 +1072,178 @@ findPilot (ifstream &inFile)
       // keep previous sums, update next
       prev[I1] = next[I1];
       next[I1] = prev[I1] + a[0] - a[49] - a[50] + a[99];
-      prev[Q1] = next[Q1];
-      next[Q1] = prev[Q1] + a[0] - a[24] - a[25] + a[74] + a[75] - a[99];
       prev[I2] = next[I2];
       next[I2] = prev[I2] + b[0] - b[49] - b[50] + b[99];
+      prev[Q1] = next[Q1];
+      next[Q1] = prev[Q1] + a[0] - a[24] - a[25] + a[74] + a[75] - a[99];
       prev[Q2] = next[Q2];
       next[Q2] = prev[Q2] + b[0] - b[24] - b[25] + b[74] + b[75] - b[99];
 
       // write debug output
-      bool first = true;
-      if (outFile)
-	for (int j = I1; j < NChan; j++)
-	  {
-	    if (first)
-	      {
-		first = false;
-	      }
-	    else
-	      {
-		outFile << ',';
-	      }
-	    outFile << next[j];
-	  }
-      outFile << endl;
+      outFile << i << ',' << next[I1] << ',' << next[Q1] << ',' << next[I2]
+	  << ',' << next[Q2] << endl;
 
-      // look for axis crossings, keeping maximums & minimums
+      // capture zero crossings, look for pilot tone signature
       if (signDiff (prev[I1], next[I1]))
 	{
-	  if (next[Q1] > maxVal[Q1])
+	  keep = true;
+	  xingI1.samp = i;
+	  int diff = xingI1.samp - xingQ1.samp;
+	  if (diff < 18 || diff > 32)
 	    {
-	      maxVal[Q1] = next[Q1];
-	      maxPos[Q1] = i;
+	      keep = false;
 	    }
-	  if (next[Q1] < minVal[Q1])
+	  double ratio = log (fabs (double (next[Q1]) / double (xingI1.ampl)));
+	  if (ratio < 0.5)
 	    {
-	      minVal[Q1] = next[Q1];
-	      minPos[Q1] = i;
+	      keep = false;
+	    }
+	  int val = xingI1.ampl = next[Q1];
+	  if (abs (val) < 10000)
+	    {
+	      keep = false;
+	    }
+	  if (keep)
+	    {
+	      // exit on first match
+	      cout << i << ", I1, " << val << ", " << diff << ", " << ratio
+		  << endl;
+	      offset = xingI1.samp;
+	      break;
 	    }
 	}
       if (signDiff (prev[Q1], next[Q1]))
 	{
-	  if (next[I1] > maxVal[I1])
+	  keep = true;
+	  xingQ1.samp = i;
+	  int diff = xingQ1.samp - xingI1.samp;
+	  if (diff < 18 || diff > 32)
 	    {
-	      maxVal[I1] = next[I1];
-	      maxPos[I1] = i;
+	      keep = false;
 	    }
-	  if (next[I1] < minVal[I1])
+	  double ratio = log (fabs (double (next[I1]) / double (xingQ1.ampl)));
+	  if (ratio < 0.5)
 	    {
-	      minVal[I1] = next[I1];
-	      minPos[I1] = i;
+	      keep = false;
+	    }
+	  int val = xingQ1.ampl = next[I1];
+	  if (abs (val) < 10000)
+	    {
+	      keep = false;
+	    }
+	  if (keep)
+	    {
+	      // exit on first match
+	      cout << i << ", Q1, " << val << ", " << diff << ", " << ratio
+		  << endl;
+	      offset = xingQ1.samp;
+	      break;
 	    }
 	}
       if (signDiff (prev[I2], next[I2]))
 	{
-	  if (next[Q2] > maxVal[Q2])
+	  keep = true;
+	  xingI2.samp = i;
+	  int diff = xingI2.samp - xingQ2.samp;
+	  if (diff < 18 || diff > 32)
 	    {
-	      maxVal[Q2] = next[Q2];
-	      maxPos[Q2] = i;
+	      keep = false;
 	    }
-	  if (next[Q2] < minVal[Q2])
+	  double ratio = log (fabs (double (next[Q2]) / double (xingI2.ampl)));
+	  if (ratio < 0.5)
 	    {
-	      minVal[Q2] = next[Q2];
-	      minPos[Q2] = i;
+	      keep = false;
+	    }
+	  int val = xingI2.ampl = next[Q2];
+	  if (abs (val) < 10000)
+	    {
+	      keep = false;
+	    }
+	  if (keep)
+	    {
+	      // exit on first match
+	      cout << i << ", I2, " << val << ", " << diff << ", " << ratio
+		  << endl;
+	      offset = xingI2.samp;
+	      break;
 	    }
 	}
       if (signDiff (prev[Q2], next[Q2]))
 	{
-	  if (next[I2] > maxVal[I2])
+	  keep = true;
+	  xingQ2.samp = i;
+	  int diff = xingQ2.samp - xingI2.samp;
+	  if (diff < 18 || diff > 32)
 	    {
-	      maxVal[I2] = next[I2];
-	      maxPos[I2] = i;
+	      keep = false;
 	    }
-	  if (next[I2] < minVal[I2])
+	  double ratio = log (fabs (double (next[I2]) / double (xingQ2.ampl)));
+	  if (ratio < 0.5)
 	    {
-	      minVal[I2] = next[I2];
-	      minPos[I2] = i;
+	      keep = false;
 	    }
-	}
-    }
-
-  // log results
-  if (verbose)
-    {
-      cout << "Chan,minVal,minPos,maxVal,maxPos" << endl;
-      for (int j = I1; j < NChan; j++)
-	{
-	  cout << j << ',' << minVal[j] << ',' << minPos[j] << ',' << maxVal[j]
-	      << ',' << maxPos[j] << endl;
-	}
-    }
-
-  // find axis crossing with greatest amplitude
-  int offset = 0;
-  double maxAbs = 0;
-  int maxChan = 0;
-  for (int j = I1; j < NChan; j++)
-    {
-      // don't divide by zero
-      if (!minVal[j] || !maxVal[j])
-	{
-	  continue;
-	}
-
-      // update maximum and position
-      if (abs (1.0 * maxVal[j] / minVal[j]) > maxAbs)
-	{
-	  maxAbs = abs (1.0 * maxVal[j] / minVal[j]);
-	  offset = maxPos[j];
-	  maxChan = j;
-	}
-      else if (abs (1.0 * minVal[j] / maxVal[j]) > maxAbs)
-	{
-	  maxAbs = abs (1.0 * minVal[j] / maxVal[j]);
-	  offset = minPos[j];
-	  maxChan = j;
+	  int val = xingQ2.ampl = next[I2];
+	  if (abs (val) < 10000)
+	    {
+	      keep = false;
+	    }
+	  if (keep)
+	    {
+	      // exit on first match
+	      cout << i << ", Q2, " << val << ", " << diff << ", " << ratio
+		  << endl;
+	      offset = xingQ2.samp;
+	      break;
+	    }
 	}
     }
 
   // compute total delay including pilot tone
-  delay = offset;
-  if (verbose)
+  if (offset)
     {
-      cout << "Pilot tone found at offset," << offset << ",in chan," << maxChan
-	  << endl;
+      delay += (offset - 99);
+      cout << "Pilot tone found at sample," << delay << endl;
+    }
+}
+
+void
+readPilotFile (const char *s)
+{
+  // get file path and log path from command stream
+  string inPath (s);
+  if (!inPath.length ())
+    {
+      cout << "Required pilot file name missing." << endl;
+      return;
     }
 
-  // restore file pointer to start of sound data
-  // NOTE this assumes we didn't hit EOF!
-  inFile.seekg (thePos, inFile.beg);
+  // must be opened in binary mode
+  ifstream inFile (inPath, ios::in | ios::binary);
+  if (!inFile)
+    {
+      cout << "Failed to open pilot file: " << inPath << endl;
+      return;
+    }
+  cout << "Reading pilot file," << inPath << endl;
+
+  theFileType = unknownFile;
+  if (readAIFFheader (inFile))
+    {
+      theFileType = typeAIFF;
+      readPilotData (inFile);
+      return;
+    }
+
+  // reset file pointer for next operation
+  inFile.clear ();
+  inFile.seekg (0, inFile.beg);
+  if (readWAVEheader (inFile))
+    {
+      theFileType = typeWAVE;
+      readPilotData (inFile);
+      return;
+    }
+
+  // TODO consider handling AIFC file type
+  cout << "Unexpected pilot file type!" << endl;
 }
